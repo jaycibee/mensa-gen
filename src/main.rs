@@ -2,9 +2,8 @@ use reqwest::blocking::get;
 use scraper::{Html, Selector, ElementRef};
 use lazy_static::lazy_static;
 use serde::Serialize;
-use serde_json::json;
 use std::path::PathBuf;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use tera::{Tera, Context};
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -84,7 +83,7 @@ fn main() {
         eprintln!("error: could not open template {:?}", args.template);
         return;
     }
-    let mut file = match File::create(args.output.clone()) {
+    let file = match File::create(args.output.clone()) {
         Ok(f) => f,
         Err(_) => {
             eprintln!("error: could not open file {:?}", args.output);
@@ -109,5 +108,8 @@ fn main() {
     let speiseplan = parse_speiseplan(document).into_iter().filter(location_filter).collect::<Vec<Location>>();
     let mut context = Context::new();
     context.insert("locations", &speiseplan);
-    tera.render_to("plan", &context, file);
+    if let Err(_) = tera.render_to("plan", &context, file) {
+        eprintln!("error: could not render template");
+        return;
+    }
 }
